@@ -25,8 +25,6 @@ set(OPENVDB_EXTRA_ARGS
   -DNANOVDB_BUILD_TOOLS=OFF
   -DBlosc_ROOT=${LIBDIR}/blosc/
   -DTBB_ROOT=${LIBDIR}/tbb/
-  -DTbb_INCLUDE_DIR=${LIBDIR}/tbb/include
-  -DTbb_LEGACY_INCLUDE_DIR=${LIBDIR}/tbb/include
   -DOPENVDB_CORE_SHARED=ON
   -DOPENVDB_CORE_STATIC=OFF
   -DOPENVDB_BUILD_BINARIES=OFF
@@ -37,8 +35,9 @@ set(OPENVDB_EXTRA_ARGS
   -DOPENVDB_PYTHON_WRAP_ALL_GRID_TYPES=ON
   -DUSE_NUMPY=ON
   -DPython_EXECUTABLE=${PYTHON_BINARY}
-  -Dpybind11_DIR=${LIBDIR}/pybind11/share/cmake/pybind11
-
+  -Dnanobind_DIR=${LIBDIR}/nanobind/nanobind/cmake/
+  # Needed to still build with VS2019
+  -DDISABLE_DEPENDENCY_VERSION_CHECKS=ON
   # OPENVDB_AX Disabled for now as it adds ~25MB distribution wise
   # with no blender code depending on it, seems wasteful.
   # -DOPENVDB_BUILD_AX=ON
@@ -53,10 +52,7 @@ set(OPENVDB_PATCH
     ${PATCH_DIR}/openvdb.diff &&
   ${PATCH_CMD} -p 1 -d
     ${BUILD_DIR}/openvdb/src/openvdb <
-    ${PATCH_DIR}/openvdb_1706.diff &&
-  ${PATCH_CMD} -p 1 -d
-    ${BUILD_DIR}/openvdb/src/openvdb <
-    ${PATCH_DIR}/openvdb_1733.diff
+    ${PATCH_DIR}/openvdb_1977.diff
 )
 
 ExternalProject_Add(openvdb
@@ -83,7 +79,7 @@ add_dependencies(
   external_blosc
   external_python
   external_numpy
-  external_pybind11
+  external_nanobind
 )
 
 if(WIN32)
@@ -104,9 +100,8 @@ if(WIN32)
         ${LIBDIR}/openvdb/bin/openvdb.dll
         ${HARVEST_TARGET}/openvdb/bin/openvdb.dll
       COMMAND ${CMAKE_COMMAND} -E copy
-        ${LIBDIR}/openvdb/lib/python${PYTHON_SHORT_VERSION}/site-packages/pyopenvdb.cp${PYTHON_SHORT_VERSION_NO_DOTS}-win_${OPENVDB_ARCH}.pyd
-        ${HARVEST_TARGET}openvdb/python/pyopenvdb.cp${PYTHON_SHORT_VERSION_NO_DOTS}-win_${OPENVDB_ARCH}.pyd
-
+        ${LIBDIR}/openvdb/lib/python${PYTHON_SHORT_VERSION}/site-packages/openvdb.cp${PYTHON_SHORT_VERSION_NO_DOTS}-win_${OPENVDB_ARCH}.pyd
+        ${HARVEST_TARGET}openvdb/python/openvdb.cp${PYTHON_SHORT_VERSION_NO_DOTS}-win_${OPENVDB_ARCH}.pyd
       DEPENDEES install
     )
   endif()
@@ -119,8 +114,8 @@ if(WIN32)
         ${LIBDIR}/openvdb/bin/openvdb_d.dll
         ${HARVEST_TARGET}/openvdb/bin/openvdb_d.dll
       COMMAND ${CMAKE_COMMAND} -E copy
-        ${LIBDIR}/openvdb/lib/python${PYTHON_SHORT_VERSION}/site-packages/pyopenvdb_d.cp${PYTHON_SHORT_VERSION_NO_DOTS}-win_${OPENVDB_ARCH}.pyd
-        ${HARVEST_TARGET}openvdb/python/pyopenvdb_d.cp${PYTHON_SHORT_VERSION_NO_DOTS}-win_${OPENVDB_ARCH}.pyd
+        ${LIBDIR}/openvdb/lib/python${PYTHON_SHORT_VERSION}/site-packages/openvdb_d.cp${PYTHON_SHORT_VERSION_NO_DOTS}-win_${OPENVDB_ARCH}.pyd
+        ${HARVEST_TARGET}openvdb/python/openvdb_d.cp${PYTHON_SHORT_VERSION_NO_DOTS}-win_${OPENVDB_ARCH}.pyd
 
       DEPENDEES install
     )

@@ -187,5 +187,7 @@ include(cmake/shaderc_deps.cmake)
 include(cmake/shaderc.cmake)
 include(cmake/vulkan.cmake)
 include(cmake/pybind11.cmake)
+include(cmake/nanobind.cmake)
+# Keep these last
 include(cmake/deps_html.cmake)
 include(cmake/cve_check.cmake)
