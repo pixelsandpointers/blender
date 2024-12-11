@@ -54,6 +54,7 @@ set(USD_EXTRA_ARGS
   ${USD_PLATFORM_FLAGS}
   -DOPENSUBDIV_ROOT_DIR=${LIBDIR}/opensubdiv
   -DOpenImageIO_ROOT=${LIBDIR}/openimageio
+  -DVulkan_ROOT=${LIBDIR}/vulkan_loader
   -DMaterialX_ROOT=${LIBDIR}/materialx
   -DOPENEXR_LIBRARIES=${LIBDIR}/imath/lib/${LIBPREFIX}Imath${OPENEXR_VERSION_POSTFIX}${SHAREDLIBEXT}
   -DOPENEXR_INCLUDE_DIR=${LIBDIR}/imath/include
@@ -87,14 +88,17 @@ set(USD_EXTRA_ARGS
   # USD 22.03 does not support OCIO 2.x
   # Tracking ticket https://github.com/PixarAnimationStudios/USD/issues/1386
   -DPXR_BUILD_OPENCOLORIO_PLUGIN=OFF
+  # We'd like Vulkan support on, but it has trouble not finding the SDK since we have
+  # the invididual components in the deps builder. 
+  -DPXR_ENABLE_VULKAN_SUPPORT=OFF
   -DPXR_ENABLE_PTEX_SUPPORT=OFF
   -DPXR_BUILD_USD_TOOLS=OFF
   -DCMAKE_DEBUG_POSTFIX=_d
   -DBUILD_SHARED_LIBS=ON
   -DTBB_INCLUDE_DIRS=${LIBDIR}/tbb/include
   -DTBB_LIBRARIES=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
-  -DTbb_TBB_LIBRARY=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
-  -DTBB_tbb_LIBRARY_RELEASE=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
+  -DTBB_LIBRARIES_DEBUG=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
+  -DTBB_LIBRARIES_RELEASE=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
 )
 
 # Ray: I'm not sure if the other platforms relied on this or not but this is no longer
@@ -124,8 +128,10 @@ ExternalProject_Add(external_usd
       ${PATCH_DIR}/usd_core_profile.diff &&
     ${PATCH_CMD} -p 1 -d
       ${BUILD_DIR}/usd/src/external_usd <
-      ${PATCH_DIR}/usd_metal_edf.diff
-
+      ${PATCH_DIR}/usd_3204.diff &&
+    ${PATCH_CMD} -p 1 -d
+      ${BUILD_DIR}/usd/src/external_usd <
+      ${PATCH_DIR}/usd_3243.diff 
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/usd
     -Wno-dev
