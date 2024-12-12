@@ -1420,16 +1420,29 @@ elseif(WIN32)
       ALL
     )
   endif()
-  windows_install_shared_manifest(
-    FILES
-      ${LIBDIR}/tbb/bin/tbb.dll
-    RELEASE
-  )
-  windows_install_shared_manifest(
-    FILES
-      ${LIBDIR}/tbb/bin/tbb_debug.dll
-    DEBUG
-  )
+  if(EXISTS ${LIBDIR}/tbb/bin/tbb12.dll) # 4.4
+    windows_install_shared_manifest(
+      FILES
+        ${LIBDIR}/tbb/bin/tbb12.dll
+      RELEASE
+    )
+    windows_install_shared_manifest(
+      FILES
+        ${LIBDIR}/tbb/bin/tbb12_debug.dll
+      DEBUG
+    )
+  else()
+    windows_install_shared_manifest(
+      FILES
+        ${LIBDIR}/tbb/bin/tbb.dll
+      RELEASE
+    )
+    windows_install_shared_manifest(
+      FILES
+        ${LIBDIR}/tbb/bin/tbb_debug.dll
+      DEBUG
+    )  
+  endif()
   if(WITH_TBB_MALLOC_PROXY)
     windows_install_shared_manifest(
       FILES

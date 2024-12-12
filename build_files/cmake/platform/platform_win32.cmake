@@ -943,10 +943,17 @@ endif()
 if(WITH_TBB)
   windows_find_package(TBB)
   if(NOT TBB_FOUND)
-    set(TBB_LIBRARIES
-      optimized ${LIBDIR}/tbb/lib/tbb.lib
-      debug ${LIBDIR}/tbb/lib/tbb_debug.lib
-    )
+    if(EXISTS ${LIBDIR}/tbb/lib/tbb12.lib) # 4.4
+      set(TBB_LIBRARIES
+        optimized ${LIBDIR}/tbb/lib/tbb12.lib
+        debug ${LIBDIR}/tbb/lib/tbb12_debug.lib
+      )
+    else() # 4.3-
+      set(TBB_LIBRARIES
+        optimized ${LIBDIR}/tbb/lib/tbb.lib
+        debug ${LIBDIR}/tbb/lib/tbb_debug.lib
+      )
+    endif()
     set(TBB_INCLUDE_DIR ${LIBDIR}/tbb/include)
     set(TBB_INCLUDE_DIRS ${TBB_INCLUDE_DIR})
     if(WITH_TBB_MALLOC_PROXY)
