@@ -8,6 +8,8 @@ set(TBB_EXTRA_ARGS
   -DTBBMALLOC_PROXY_BUILD=On
   -DTBB_TEST=Off
   -DCMAKE_DEBUG_POSTFIX=_debug
+  # Don't pick up hwloc shared library from system package manager.
+  -DTBB_DISABLE_HWLOC_AUTOMATIC_SEARCH=ON
 )
 # TBB does not use soversion by default unlike other libs, but it's needed
 # to avoid conflicts with incompatible TBB system libs in LD_LIBRARY_PATH
@@ -57,5 +59,5 @@ if(WIN32)
   endif()
 else()
   harvest(external_tbb tbb/include tbb/include "*.h")
-  harvest_rpath_lib(external_tbb tbb/lib tbb/lib "libtbb${SHAREDLIBEXT}*")
+  harvest_rpath_lib(external_tbb tbb/lib tbb/lib "*${SHAREDLIBEXT}*")
 endif()
