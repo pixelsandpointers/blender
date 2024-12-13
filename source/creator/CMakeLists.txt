@@ -1345,6 +1345,7 @@ elseif(WIN32)
         set(_openvdb_arch amd64)
       endif()
 
+      # 4.3 
       if(EXISTS ${LIBDIR}/openvdb/python/pyopenvdb_d.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd)
         install(
           FILES ${LIBDIR}/openvdb/python/pyopenvdb_d.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd
@@ -1357,7 +1358,19 @@ elseif(WIN32)
           CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
         )
       endif()
-
+      # 4.4
+      if(EXISTS ${LIBDIR}/openvdb/python/openvdb_d.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd)
+        install(
+          FILES ${LIBDIR}/openvdb/python/openvdb_d.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          CONFIGURATIONS Debug
+        )
+        install(
+          FILES ${LIBDIR}/openvdb/python/openvdb.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
+        )
+      endif()
       # MaterialX python bindings
       install(
         DIRECTORY ${LIBDIR}/materialx/python/Release/MaterialX
