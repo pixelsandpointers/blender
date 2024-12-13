@@ -131,7 +131,10 @@ ExternalProject_Add(external_usd
       ${PATCH_DIR}/usd_3204.diff &&
     ${PATCH_CMD} -p 1 -d
       ${BUILD_DIR}/usd/src/external_usd <
-      ${PATCH_DIR}/usd_3243.diff 
+      ${PATCH_DIR}/usd_3243.diff  &&
+    ${PATCH_CMD} -p 1 -d
+      ${BUILD_DIR}/usd/src/external_usd <
+      ${PATCH_DIR}/usd_3434.diff 
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/usd
     -Wno-dev
