@@ -38,15 +38,15 @@ set(RELEASE_HIP_VERSION 5.7.*)
 #  Note that multi-line strings *must* use [=[...]=] bounds.
 
 
-set(ZLIB_VERSION 1.2.13)
+set(ZLIB_VERSION 1.3.1)
 set(ZLIB_URI https://github.com/madler/zlib/releases/download/v${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz)
-set(ZLIB_HASH 9b8aa094c4e5765dabf4da391f00d15c)
+set(ZLIB_HASH 9855b6d802d7fe5b7bd5b196a2271655)
 set(ZLIB_HASH_TYPE MD5)
 set(ZLIB_FILE zlib-${ZLIB_VERSION}.tar.gz)
 set(ZLIB_CPE "cpe:2.3:a:zlib:zlib:${ZLIB_VERSION}:*:*:*:*:*:*:*")
 set(ZLIB_HOMEPAGE https://zlib.net)
 set(ZLIB_LICENSE SPDX:Zlib)
-set(ZLIB_COPYRIGHT "Copyright (C) 1995-2017 Jean-loup Gailly")
+set(ZLIB_COPYRIGHT "Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler")
 
 set(OPENAL_VERSION 1.23.1)
 set(OPENAL_URI https://github.com/kcat/openal-soft/releases/download/${OPENAL_VERSION}/openal-soft-${OPENAL_VERSION}.tar.bz2)
@@ -368,18 +368,18 @@ set(OSL_COPYRIGHT "Copyright Contributors to the Open Shading Language project."
 # Additionally, keep the PYTHON_PIP_VERSION in sync with the pip version bundled
 # into Python.
 
-set(PYTHON_VERSION 3.11.9)
+set(PYTHON_VERSION 3.11.11)
 set(PYTHON_SHORT_VERSION 3.11)
 set(PYTHON_SHORT_VERSION_NO_DOTS 311)
 set(PYTHON_URI https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz)
-set(PYTHON_HASH 22ea467e7d915477152e99d5da856ddc)
+set(PYTHON_HASH 3e497037b170fe4be5f462c4964596f2)
 set(PYTHON_HASH_TYPE MD5)
 set(PYTHON_FILE Python-${PYTHON_VERSION}.tar.xz)
 set(PYTHON_CPE "cpe:2.3:a:python:python:${PYTHON_VERSION}:-:*:*:*:*:*:*")
 set(PYTHON_HOMEPAGE https://www.python.org/)
 set(PYTHON_NAME Python)
 set(PYTHON_LICENSE SPDX:Python-2.0)
-set(PYTHON_COPYRIGHT "Copyright (c) 2001-2021 Python Software Foundation. All rights reserved.")
+set(PYTHON_COPYRIGHT "Copyright (c) 2001-2023 Python Software Foundation. All rights reserved.")
 
 # Python bundles pip wheel, and does not track CVEs from it. Add an explicit CPE
 # identifier for pip, so that cve_check can detect vulnerabilities in it.
