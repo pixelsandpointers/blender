@@ -437,7 +437,7 @@ set(CERTIFI_VERSION 2021.10.8)
 # Needed by: Some of Blender's add-ons (to support convenient interaction with online services).
 set(REQUESTS_VERSION 2.27.1)
 # Needed by: Python's `numpy` module (used by some add-ons).
-set(CYTHON_VERSION 0.29.30)
+set(CYTHON_VERSION 3.0.11)
 # Needed by: Python scripts that read `.blend` files, as files may use Z-standard compression.
 # The version of the ZSTD library used to build the Python package should match ZSTD_VERSION
 # defined below. At this time of writing, 0.17.0 was already released,
@@ -450,10 +450,10 @@ set(PYCODESTYLE_VERSION 2.12.1)
 # Build system for other packages (not used by Blender at run-time).
 set(MESON_VERSION 0.63.0)
 
-set(NUMPY_VERSION 1.24.3)
-set(NUMPY_SHORT_VERSION 1.24)
+set(NUMPY_VERSION 1.26.4)
+set(NUMPY_SHORT_VERSION 1.26)
 set(NUMPY_URI https://github.com/numpy/numpy/releases/download/v${NUMPY_VERSION}/numpy-${NUMPY_VERSION}.tar.gz)
-set(NUMPY_HASH 89e5e2e78407032290ae6acf6dcaea46)
+set(NUMPY_HASH 19550cbe7bedd96a928da9d4ad69509d)
 set(NUMPY_HASH_TYPE MD5)
 set(NUMPY_FILE numpy-${NUMPY_VERSION}.tar.gz)
 set(NUMPY_CPE "cpe:2.3:a:numpy:numpy:${NUMPY_VERSION}:*:*:*:*:*:*:*")
