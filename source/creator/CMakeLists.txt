@@ -561,24 +561,14 @@ if(WIN32)
       DEBUG
     )
   endif()
-  if(EXISTS ${LIBDIR}/opencolorio/bin/opencolorio_2_2.dll) # 3.5
+  if(EXISTS ${LIBDIR}/opencolorio/bin/opencolorio_2_4.dll) # 4.4
     windows_install_shared_manifest(
-      FILES ${LIBDIR}/opencolorio/bin/opencolorio_2_2.dll
+      FILES ${LIBDIR}/opencolorio/bin/opencolorio_2_4.dll
       RELEASE
     )
     windows_install_shared_manifest(
-      FILES ${LIBDIR}/opencolorio/bin/opencolorio_d_2_2.dll
+      FILES ${LIBDIR}/opencolorio/bin/opencolorio_d_2_4.dll
       DEBUG
-    )
-    install(
-      FILES ${LIBDIR}/opencolorio/lib/site-packages-debug/PyOpenColorIO_d.pyd
-      DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
-      CONFIGURATIONS Debug
-    )
-    install(
-      FILES ${LIBDIR}/opencolorio/lib/site-packages/PyOpenColorIO.pyd
-      DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
-      CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
     )
   endif()
   if(EXISTS ${LIBDIR}/opencolorio/bin/opencolorio_2_3.dll) # 4.1
@@ -590,17 +580,17 @@ if(WIN32)
       FILES ${LIBDIR}/opencolorio/bin/opencolorio_d_2_3.dll
       DEBUG
     )
-    install(
-      DIRECTORY ${LIBDIR}/opencolorio/lib/site-packages-debug/PyOpenColorIO
-      DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
-      CONFIGURATIONS Debug
-    )
-    install(
-      DIRECTORY ${LIBDIR}/opencolorio/lib/site-packages/PyOpenColorIO
-      DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
-      CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
-    )
   endif()
+  install(
+    DIRECTORY ${LIBDIR}/opencolorio/lib/site-packages-debug/PyOpenColorIO
+    DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+    CONFIGURATIONS Debug
+  )
+  install(
+    DIRECTORY ${LIBDIR}/opencolorio/lib/site-packages/PyOpenColorIO
+    DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+    CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
+  )
   if(EXISTS ${LIBDIR}/OpenImageDenoise/bin/openimagedenoise.dll) # 4.0
     windows_install_shared_manifest(
       FILES
