@@ -36,4 +36,5 @@ vendor,product,version,cve_number,remarks,comment
 @SQLITE_ID@,CVE-2023-7104,NotAffected,does not affect blender use of sqlite
 @SQLITE_ID@,CVE-2024-0232,NotAffected,does not affect blender use of sqlite
 @ZLIB_ID@,CVE-2023-45853,NotAffected,only affects minizip not used by blender
+@SNDFILE_ID@,CVE-2024-50612,Mitigated,patched using upstream PR 1045
 @SBOMCONTENTS@
