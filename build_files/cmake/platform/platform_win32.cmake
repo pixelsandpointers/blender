@@ -101,7 +101,7 @@ endif()
 list(APPEND PLATFORM_LINKLIBS
   ws2_32 vfw32 winmm kernel32 user32 gdi32 comdlg32 Comctl32 version
   advapi32 shfolder shell32 ole32 oleaut32 uuid psapi Dbghelp Shlwapi
-  pathcch Shcore Dwmapi Crypt32
+  pathcch Shcore Dwmapi Crypt32 Bcrypt 
 )
 
 if(WITH_INPUT_IME)
