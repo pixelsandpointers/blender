@@ -662,9 +662,9 @@ Copyright (C) 2009-2013 Facebook, Inc.  All rights reserved.
 Copyright (C) 2013 Jason Evans <jasone@canonware.com>.
 ]=])
 
-set(XML2_VERSION 2.12.3)
-set(XML2_URI https://download.gnome.org/sources/libxml2/2.12/libxml2-${XML2_VERSION}.tar.xz)
-set(XML2_HASH 13871e7cf2137b4b9b9da753ffef538c)
+set(XML2_VERSION 2.13.5)
+set(XML2_URI https://download.gnome.org/sources/libxml2/2.13/libxml2-${XML2_VERSION}.tar.xz)
+set(XML2_HASH 0b919be8edff97ade9c946e1a83bdecd)
 set(XML2_HASH_TYPE MD5)
 set(XML2_FILE libxml2-${XML2_VERSION}.tar.xz)
 set(XML2_CPE "cpe:2.3:a:xmlsoft:libxml2:${XML2_VERSION}:*:*:*:*:*:*:*")
