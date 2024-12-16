@@ -545,6 +545,18 @@ if(WITH_OPENCOLORIO)
   )
 endif()
 if(WIN32)
+  if(EXISTS ${LIBDIR}/osl/lib/python${PYTHON_VERSION}/site-packages/oslquery.pyd) # 4.4+
+    install(
+      FILES ${LIBDIR}/osl/lib/python${PYTHON_VERSION}/site-packages/oslquery.pyd
+      DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+      CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
+    )
+    install(
+      FILES ${LIBDIR}/osl/lib/python${PYTHON_VERSION}_debug/site-packages/oslquery_d.pyd
+      DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+      CONFIGURATIONS Debug
+    )
+  endif()
   if(EXISTS ${LIBDIR}/osl/bin/oslquery.dll) # 4.1+
     windows_install_shared_manifest(
       FILES ${LIBDIR}/osl/bin/oslquery.dll

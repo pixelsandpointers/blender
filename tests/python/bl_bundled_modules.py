@@ -34,12 +34,8 @@ from pxr import Usd
 import MaterialX
 import OpenImageIO
 import PyOpenColorIO
-# Openvdb changed their name between V11 and V12 try the new name first fall back
-# on the old name incase we're building against an older lib folder. 
-try:
-    import openvdb
-except ImportError:
-    import pyopenvdb
+import openvdb
+import oslquery
 
 # Test modules in bundled Python standalone executable.
 if app == "Blender":

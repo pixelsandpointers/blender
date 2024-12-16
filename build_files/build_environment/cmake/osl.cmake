@@ -41,9 +41,10 @@ set(OSL_EXTRA_ARGS
   -DUSE_QT=OFF
   -DINSTALL_DOCS=OFF
   -Dpugixml_ROOT=${LIBDIR}/pugixml
-  -DUSE_PYTHON=OFF
+  -DUSE_PYTHON=ON
   -DImath_ROOT=${LIBDIR}/imath
   -DCMAKE_DEBUG_POSTFIX=_d
+  -Dpybind11_ROOT=${LIBDIR}/pybind11
   -DPython_ROOT=${LIBDIR}/python
   -DPython_EXECUTABLE=${PYTHON_BINARY}
   -Dlibdeflate_DIR=${LIBDIR}/deflate/lib/cmake/libdeflate
@@ -82,6 +83,8 @@ add_dependencies(
   external_zlib
   external_openimageio
   external_pugixml
+  external_python
+  external_pybind11
 )
 if(WIN32)
   add_dependencies(
@@ -131,6 +134,9 @@ if(WIN32)
       COMMAND ${CMAKE_COMMAND} -E copy
         ${LIBDIR}/osl/bin/oslnoise_d.dll
         ${HARVEST_TARGET}/osl/bin/oslnoise_d.dll
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${LIBDIR}/osl/lib/python${PYTHON_SHORT_VERSION}/
+        ${HARVEST_TARGET}/osl/lib/python${PYTHON_SHORT_VERSION}_debug/
 
       DEPENDEES install
     )
@@ -140,4 +146,9 @@ else()
   harvest(external_osl osl/include osl/include "*.h")
   harvest_rpath_lib(external_osl osl/lib osl/lib "*${SHAREDLIBEXT}*")
   harvest(external_osl osl/share/OSL/shaders osl/share/OSL/shaders "*.h")
+  harvest_rpath_python(external_osl
+    osl/lib/python${PYTHON_SHORT_VERSION}
+    python/lib/python${PYTHON_SHORT_VERSION}
+    "*"
+  )
 endif()
