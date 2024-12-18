@@ -7,13 +7,11 @@ if(BUILD_MODE STREQUAL Debug)
 endif()
 
 set(OPENVDB_EXTRA_ARGS
-  ${DEFAULT_BOOST_FLAGS}
   -DUSE_STATIC_DEPENDENCIES=OFF   # This is the global toggle for static libs
   # Once the above switch is off, you can set it
   # for each individual library below.
   -DBLOSC_USE_STATIC_LIBS=ON
   -DTBB_USE_STATIC_LIBS=OFF
-  -DBoost_USE_STATIC_LIBS=OFF
   -DZLIB_LIBRARY=${LIBDIR}/zlib/lib/${ZLIB_LIBRARY}
   -DZLIB_INCLUDE_DIR=${LIBDIR}/zlib/include/
   -DBlosc_INCLUDE_DIR=${LIBDIR}/blosc/include/
@@ -38,6 +36,9 @@ set(OPENVDB_EXTRA_ARGS
   -Dnanobind_DIR=${LIBDIR}/nanobind/nanobind/cmake/
   # Needed to still build with VS2019
   -DDISABLE_DEPENDENCY_VERSION_CHECKS=ON
+  # Not used by Blender (see e4f9c50), and removes the Boost dependency.
+  -DOPENVDB_USE_DELAYED_LOADING=OFF
+
   # OPENVDB_AX Disabled for now as it adds ~25MB distribution wise
   # with no blender code depending on it, seems wasteful.
   # -DOPENVDB_BUILD_AX=ON
@@ -74,7 +75,6 @@ ExternalProject_Add(openvdb
 add_dependencies(
   openvdb
   external_tbb
-  external_boost
   external_zlib
   external_blosc
   external_python
