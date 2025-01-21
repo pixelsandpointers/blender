@@ -402,7 +402,7 @@ if(UNIX AND NOT APPLE)
       set(TARGETDIR_TEXT "share/doc/blender")
     endif()
   endif()
-
+  set(TARGETDIR_SITE_PACKAGES "${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}/site-packages")
 elseif(WIN32)
   if(WITH_PYTHON_MODULE)
     set(TARGETDIR_BPY ${CMAKE_INSTALL_PREFIX_WITH_CONFIG}/bpy)
@@ -416,6 +416,7 @@ elseif(WIN32)
     set(TARGETDIR_LIB "blender.shared")
     set(TARGETDIR_EXE ".")
   endif()
+  set(TARGETDIR_SITE_PACKAGES "${TARGETDIR_VER}/python/lib/site-packages")
 elseif(APPLE)
   if(WITH_PYTHON_MODULE)
     if(WITH_INSTALL_PORTABLE)
@@ -434,6 +435,7 @@ elseif(APPLE)
     set(TARGETDIR_LIB "Blender.app/Contents/Resources/lib")
     set(TARGETDIR_TEXT "Blender.app/Contents/Resources/text")
   endif()
+  set(TARGETDIR_SITE_PACKAGES "${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}/site-packages")
   # Skip re-linking on CPACK / install.
   set_target_properties(blender PROPERTIES BUILD_WITH_INSTALL_RPATH true)
 endif()
@@ -465,18 +467,18 @@ if(WITH_PYTHON)
     PATTERN "${FREESTYLE_EXCLUDE_CONDITIONAL}" EXCLUDE
   )
 
-  if(WITH_PYTHON_INSTALL)
-    if(WIN32)
-      install(
-        FILES ${CMAKE_SOURCE_DIR}/scripts/site/sitecustomize.py
-        DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
-      )
-    else()
-      install(
-        FILES ${CMAKE_SOURCE_DIR}/scripts/site/sitecustomize.py
-        DESTINATION ${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}/site-packages
-      )
-    endif()
+  if(WITH_PYTHON_MODULE)
+    install(
+      FILES ${CMAKE_SOURCE_DIR}/scripts/site/sitecustomize.py
+      DESTINATION ${TARGETDIR_VER}/scripts/startup
+      # Rename to avoid conflict with system `sitecustomize.py`.
+      RENAME bpy_site_customize.py
+    )
+  elseif(WITH_PYTHON_INSTALL)
+    install(
+      FILES ${CMAKE_SOURCE_DIR}/scripts/site/sitecustomize.py
+      DESTINATION ${TARGETDIR_SITE_PACKAGES}
+    )
   endif()
   unset(FREESTYLE_EXCLUDE_CONDITIONAL)
 
@@ -548,12 +550,12 @@ if(WIN32)
   if(EXISTS ${LIBDIR}/osl/lib/python${PYTHON_VERSION}/site-packages/oslquery.pyd) # 4.4+
     install(
       FILES ${LIBDIR}/osl/lib/python${PYTHON_VERSION}/site-packages/oslquery.pyd
-      DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+      DESTINATION ${TARGETDIR_SITE_PACKAGES}
       CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
     )
     install(
       FILES ${LIBDIR}/osl/lib/python${PYTHON_VERSION}_debug/site-packages/oslquery_d.pyd
-      DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+      DESTINATION ${TARGETDIR_SITE_PACKAGES}
       CONFIGURATIONS Debug
     )
   endif()
@@ -597,12 +599,12 @@ if(WIN32)
   endif()
   install(
     DIRECTORY ${LIBDIR}/opencolorio/lib/site-packages-debug/PyOpenColorIO
-    DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+    DESTINATION ${TARGETDIR_SITE_PACKAGES}
     CONFIGURATIONS Debug
   )
   install(
     DIRECTORY ${LIBDIR}/opencolorio/lib/site-packages/PyOpenColorIO
-    DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+    DESTINATION ${TARGETDIR_SITE_PACKAGES}
     CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
   )
   if(EXISTS ${LIBDIR}/OpenImageDenoise/bin/openimagedenoise.dll) # 4.0
@@ -1227,7 +1229,8 @@ elseif(WIN32)
       endif()
     endif()
 
-    if(WITH_PYTHON_INSTALL)
+    # VFX libs are bundled with both Blender executable and Python module.
+    if(WITH_PYTHON_INSTALL OR WITH_PYTHON_MODULE)
       # NOTE: as far as python is concerned `RelWithDebInfo`
       # is not debug since its without debug flags.
 
@@ -1286,7 +1289,7 @@ elseif(WIN32)
       if(EXISTS ${LIBDIR}/openimageio/lib/python${PYTHON_VERSION}/site-packages)
         install(
           DIRECTORY ${LIBDIR}/openimageio/lib/python${PYTHON_VERSION}/site-packages/
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages/
+          DESTINATION ${TARGETDIR_SITE_PACKAGES}/
           CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
           PATTERN "__pycache__" EXCLUDE           # * any cache *
           PATTERN "*.pyc" EXCLUDE                 # * any cache *
@@ -1296,7 +1299,7 @@ elseif(WIN32)
       if(EXISTS ${LIBDIR}/openimageio/lib/python${PYTHON_VERSION}_debug/site-packages)
         install(
           DIRECTORY ${LIBDIR}/openimageio/lib/python${PYTHON_VERSION}_debug/site-packages/
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages/
+          DESTINATION ${TARGETDIR_SITE_PACKAGES}/
           CONFIGURATIONS Debug
           PATTERN "__pycache__" EXCLUDE           # * any cache *
           PATTERN "*.pyc" EXCLUDE                 # * any cache *
@@ -1309,7 +1312,7 @@ elseif(WIN32)
       if(EXISTS ${USD_LIBRARY_DIR}/python/)
         install(
           DIRECTORY ${USD_LIBRARY_DIR}/python/
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          DESTINATION ${TARGETDIR_SITE_PACKAGES}
           CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
           PATTERN "__pycache__" EXCLUDE           # * any cache *
           PATTERN "*.pyc" EXCLUDE                 # * any cache *
@@ -1319,7 +1322,7 @@ elseif(WIN32)
       if(EXISTS ${USD_LIBRARY_DIR}/debug/python/)
         install(
           DIRECTORY ${USD_LIBRARY_DIR}/debug/python/
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          DESTINATION ${TARGETDIR_SITE_PACKAGES}
           CONFIGURATIONS Debug
           PATTERN "__pycache__" EXCLUDE           # * any cache *
           PATTERN "*.pyc" EXCLUDE                 # * any cache *
@@ -1332,12 +1335,12 @@ elseif(WIN32)
       if(EXISTS ${LIBDIR}/openvdb/python/pyopenvdb_d.pyd)
         install(
           FILES ${LIBDIR}/openvdb/python/pyopenvdb_d.pyd
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          DESTINATION ${TARGETDIR_SITE_PACKAGES}
           CONFIGURATIONS Debug
         )
         install(
           FILES ${LIBDIR}/openvdb/python/pyopenvdb.pyd
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          DESTINATION ${TARGETDIR_SITE_PACKAGES}
           CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
         )
       endif()
@@ -1349,16 +1352,16 @@ elseif(WIN32)
         set(_openvdb_arch amd64)
       endif()
 
-      # 4.3 
+      # 4.3
       if(EXISTS ${LIBDIR}/openvdb/python/pyopenvdb_d.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd)
         install(
           FILES ${LIBDIR}/openvdb/python/pyopenvdb_d.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          DESTINATION ${TARGETDIR_SITE_PACKAGES}
           CONFIGURATIONS Debug
         )
         install(
           FILES ${LIBDIR}/openvdb/python/pyopenvdb.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          DESTINATION ${TARGETDIR_SITE_PACKAGES}
           CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
         )
       endif()
@@ -1366,19 +1369,19 @@ elseif(WIN32)
       if(EXISTS ${LIBDIR}/openvdb/python/openvdb_d.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd)
         install(
           FILES ${LIBDIR}/openvdb/python/openvdb_d.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          DESTINATION ${TARGETDIR_SITE_PACKAGES}
           CONFIGURATIONS Debug
         )
         install(
           FILES ${LIBDIR}/openvdb/python/openvdb.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openvdb_arch}.pyd
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          DESTINATION ${TARGETDIR_SITE_PACKAGES}
           CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
         )
       endif()
       # MaterialX python bindings
       install(
         DIRECTORY ${LIBDIR}/materialx/python/Release/MaterialX
-        DESTINATION ${TARGETDIR_VER}/python/lib/site-packages/
+        DESTINATION ${TARGETDIR_SITE_PACKAGES}/
         CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
         PATTERN "__pycache__" EXCLUDE           # * any cache *
         PATTERN "*.pyc" EXCLUDE                 # * any cache *
@@ -1386,13 +1389,15 @@ elseif(WIN32)
       )
       install(
         DIRECTORY ${LIBDIR}/materialx/python/Debug/MaterialX
-        DESTINATION ${TARGETDIR_VER}/python/lib/site-packages/
+        DESTINATION ${TARGETDIR_SITE_PACKAGES}/
         CONFIGURATIONS Debug
         PATTERN "__pycache__" EXCLUDE           # * any cache *
         PATTERN "*.pyc" EXCLUDE                 # * any cache *
         PATTERN "*.pyo" EXCLUDE                 # * any cache *
       )
+    endif()
 
+    if(WITH_PYTHON_INSTALL)
       if(WINDOWS_PYTHON_DEBUG)
         install(
           FILES
@@ -1458,7 +1463,7 @@ elseif(WIN32)
       FILES
         ${LIBDIR}/tbb/bin/tbb_debug.dll
       DEBUG
-    )  
+    )
   endif()
   if(WITH_TBB_MALLOC_PROXY)
     windows_install_shared_manifest(
@@ -1700,6 +1705,34 @@ elseif(APPLE)
 
 endif()
 
+# Windows already installs these, for Unix we need to pick just the VFX libs from
+# the site-packages directory.
+if(WITH_PYTHON_MODULE AND LIBDIR AND NOT WIN32)
+  install(
+    DIRECTORY ${LIBDIR}/python/lib/python${PYTHON_VERSION}/site-packages/MaterialX
+    DESTINATION ${TARGETDIR_SITE_PACKAGES})
+  install(
+    DIRECTORY ${LIBDIR}/python/lib/python${PYTHON_VERSION}/site-packages/OpenImageIO
+    DESTINATION ${TARGETDIR_SITE_PACKAGES})
+  install(
+    DIRECTORY ${LIBDIR}/python/lib/python${PYTHON_VERSION}/site-packages/PyOpenColorIO
+    DESTINATION ${TARGETDIR_SITE_PACKAGES})
+  install(
+    FILES ${LIBDIR}/python/lib/python${PYTHON_VERSION}/site-packages/oslquery.so
+    DESTINATION ${TARGETDIR_SITE_PACKAGES} OPTIONAL)
+  install(
+    DIRECTORY ${LIBDIR}/python/lib/python${PYTHON_VERSION}/site-packages/pxr
+    DESTINATION ${TARGETDIR_SITE_PACKAGES})
+  if(APPLE)
+    set(_pyopenvdb_filename pyopenvdb.cpython-${PYTHON_VERSION_NO_DOTS}-darwin.so)
+  else()
+    set(_pyopenvdb_filename pyopenvdb.cpython-${PYTHON_VERSION_NO_DOTS}-${CMAKE_SYSTEM_PROCESSOR}-linux-gnu.so)
+  endif()
+  install(
+    FILES ${LIBDIR}/python/lib/python${PYTHON_VERSION}/site-packages/${_pyopenvdb_filename}
+    DESTINATION ${TARGETDIR_SITE_PACKAGES})
+endif()
+
 # -----------------------------------------------------------------------------
 # Generic Install, for all targets
 
@@ -1921,7 +1954,7 @@ if(WIN32)
   endif()
 endif()
 
-# `vcpkg` substitutes our libraries with theirs, which will cause issues when you you run
+# `vcpkg` substitutes our libraries with theirs, which will cause issues when you run
 # these builds on other systems due to missing DLL's. So we opt out the use of `vcpkg`.
 if(WIN32)
   set_target_properties(blender PROPERTIES VS_GLOBAL_VcpkgEnabled "false")
