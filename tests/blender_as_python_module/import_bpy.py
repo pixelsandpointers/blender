@@ -16,4 +16,5 @@ from pxr import Usd
 import MaterialX
 import OpenImageIO
 import PyOpenColorIO
-import pyopenvdb
+import openvdb
+import oslquery
