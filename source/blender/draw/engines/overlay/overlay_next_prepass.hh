@@ -193,8 +193,10 @@ class Prepass : Overlay {
     bool is_solid = ob_ref.object->dt >= OB_SOLID ||
                     (state.v3d->shading.type == OB_RENDER &&
                      !(ob_ref.object->visibility_flag & OB_HIDE_CAMERA));
+    bool in_weight_paint = (ob_ref.object == state.object_active) &&
+                           (state.object_mode & OB_MODE_WEIGHT_PAINT);
 
-    if (!enabled_ || !is_solid) {
+    if (!enabled_ || (!is_solid && !in_weight_paint)) {
       return;
     }
 
