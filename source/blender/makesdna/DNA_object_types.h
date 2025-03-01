@@ -578,6 +578,8 @@ enum {
   /* runtime constraints disable */
   OB_NO_CONSTRAINTS = 1 << 13,
 
+  OB_PARENT_USE_FINAL_GEOMETRY = 1 << 14,
+
   OB_DUPLI = OB_DUPLIVERTS | OB_DUPLICOLLECTION | OB_DUPLIFACES | OB_DUPLIPARTS,
 };
 
