@@ -1401,7 +1401,6 @@ url_manual_mapping = (
     ("bpy.types.movieclipsequence.stabilize2d*", "video_editing/edit/montage/strips/clip.html#bpy-types-movieclipsequence-stabilize2d"),
     ("bpy.types.movietrackingcamera.principal*", "movie_clip/tracking/clip/sidebar/track/camera.html#bpy-types-movietrackingcamera-principal"),
     ("bpy.types.object.active_shape_key_index*", "animation/shape_keys/shape_keys_panel.html#bpy-types-object-active-shape-key-index"),
-    ("bpy.types.object.parent_use_final_geometry*", "scene_layout/object/properties/relations.html#bpy-types-object-parent-use-final-geometry"),   
     ("bpy.types.object.use_camera_lock_parent*", "scene_layout/object/properties/relations.html#bpy-types-object-use-camera-lock-parent"),
     ("bpy.types.object.visible_volume_scatter*", "render/cycles/object_settings/object_data.html#bpy-types-object-visible-volume-scatter"),
     ("bpy.types.preferencesedit.material_link*", "editors/preferences/editing.html#bpy-types-preferencesedit-material-link"),
