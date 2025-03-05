@@ -577,7 +577,7 @@ enum {
   OB_TRANSFLAG_UNUSED_12 = 1 << 12, /* cleared */
   /* runtime constraints disable */
   OB_NO_CONSTRAINTS = 1 << 13,
-
+  /* when calculating vertex parent position, ignore CD_ORIGINDEX layer */
   OB_PARENT_USE_FINAL_GEOMETRY = 1 << 14,
 
   OB_DUPLI = OB_DUPLIVERTS | OB_DUPLICOLLECTION | OB_DUPLIFACES | OB_DUPLIPARTS,
