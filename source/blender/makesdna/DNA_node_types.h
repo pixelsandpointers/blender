@@ -1504,6 +1504,11 @@ typedef struct NodeTranslateData {
   short interpolation;
 } NodeTranslateData;
 
+typedef struct NodeScaleData {
+  char wrap_axis;
+  char interpolation;
+} NodeScaleData;
+
 typedef struct NodePlaneTrackDeformData {
   char tracking_object[64];
   char plane_track_name[64];

@@ -33,6 +33,8 @@
 
 namespace blender::nodes::node_composite_scale_cc {
 
+NODE_STORAGE_FUNCS(NodeScaleData)
+
 static void cmp_node_scale_declare(NodeDeclarationBuilder &b)
 {
   b.add_input<decl::Color>("Image")
@@ -52,6 +54,12 @@ static void cmp_node_scale_declare(NodeDeclarationBuilder &b)
   b.add_output<decl::Color>("Image");
 }
 
+static void node_composit_init_scale(bNodeTree * /*ntree*/, bNode *node)
+{
+  NodeScaleData *data = MEM_callocN<NodeScaleData>(__func__);
+  node->storage = data;
+}
+
 static void node_composite_update_scale(bNodeTree *ntree, bNode *node)
 {
   bool use_xy_scale = ELEM(node->custom1, CMP_NODE_SCALE_RELATIVE, CMP_NODE_SCALE_ABSOLUTE);
@@ -66,19 +74,19 @@ static void node_composite_update_scale(bNodeTree *ntree, bNode *node)
 
 static void node_composit_buts_scale(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
 {
-  uiItemR(layout, ptr, "space", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
+  uiItemR(layout, ptr, "custom1", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
+  uiItemR(layout, ptr, "interpolation", UI_ITEM_R_SPLIT_EMPTY_NAME, std::nullopt, ICON_NONE);
 
-  if (RNA_enum_get(ptr, "space") == CMP_NODE_SCALE_RENDER_SIZE) {
-    uiLayout *row;
+  if (RNA_enum_get(ptr, "custom2") == CMP_NODE_SCALE_RENDER_SIZE) {
     uiItemR(layout,
             ptr,
-            "frame_method",
+            "custom2",
             UI_ITEM_R_SPLIT_EMPTY_NAME | UI_ITEM_R_EXPAND,
             std::nullopt,
             ICON_NONE);
-    row = uiLayoutRow(layout, true);
-    uiItemR(row, ptr, "offset_x", UI_ITEM_R_SPLIT_EMPTY_NAME, "X", ICON_NONE);
-    uiItemR(row, ptr, "offset_y", UI_ITEM_R_SPLIT_EMPTY_NAME, "Y", ICON_NONE);
+    uiLayout *row = uiLayoutRow(layout, true);
+    uiItemR(row, ptr, "custom3", UI_ITEM_R_SPLIT_EMPTY_NAME, "X", ICON_NONE);
+    uiItemR(row, ptr, "custom4", UI_ITEM_R_SPLIT_EMPTY_NAME, "Y", ICON_NONE);
   }
 }
 
@@ -110,7 +118,10 @@ class ScaleOperation : public NodeOperation {
     Result &output = this->get_result("Image");
     output.share_data(input);
     output.transform(transformation);
-    output.get_realization_options().interpolation = input.get_realization_options().interpolation;
+    output.get_realization_options().interpolation = this->get_interpolation();
+    output.get_realization_options().repeat_x = this->get_repeat_x();
+    output.get_realization_options().repeat_y = this->get_repeat_y();
+
   }
 
   void execute_variable_size()
@@ -125,6 +136,7 @@ class ScaleOperation : public NodeOperation {
 
   void execute_variable_size_gpu()
   {
+    // TODO: implement shader for the variable size case. see: realize_on_domain_operation.cc
     GPUShader *shader = context().get_shader("compositor_scale_variable");
     GPU_shader_bind(shader);
 
@@ -160,6 +172,11 @@ class ScaleOperation : public NodeOperation {
     const Result &y_scale = this->get_input("Y");
 
     Result &output = this->get_result("Image");
+    output.get_realization_options().interpolation = this->get_interpolation();
+    output.get_realization_options().repeat_x = this->get_repeat_x();
+    output.get_realization_options().repeat_y = this->get_repeat_y();
+    const RealizationOptions realization_options = output.get_realization_options();
+
     const Domain domain = compute_domain();
     output.allocate_texture(domain);
 
@@ -173,8 +190,97 @@ class ScaleOperation : public NodeOperation {
       float2 scaled_coordinates = center +
                                   (coordinates - center) / math::max(scale, float2(0.0001f));
 
-      output.store_pixel(texel, input.sample_bilinear_zero(scaled_coordinates));
+      switch (realization_options.interpolation) {
+        case Interpolation::Bicubic:
+          output.store_pixel(texel, input.sample_cubic_wrap(scaled_coordinates, false, false));
+          break;
+        case Interpolation::Bilinear:
+          output.store_pixel(texel, input.sample_bilinear_wrap(scaled_coordinates, false, false));
+          break;
+        case Interpolation::Nearest:
+          output.store_pixel(texel, input.sample_nearest_wrap(scaled_coordinates, false, false));
+          break;
+      }
     });
+  }
+
+  const char *get_realization_shader_name()
+  {
+    Interpolation interpolation =
+        this->get_result("Image").get_realization_options().interpolation;
+    ResultType type = this->get_result("Image").type();
+    if (interpolation == Interpolation::Nearest) {
+      switch (type) {
+        case ResultType::Float:
+          return "compositor_scale_nearest_float";
+        case ResultType::Float4:
+          return "compositor_scale_nearest_float4";
+        case ResultType::Int:
+        case ResultType::Color:
+        case ResultType::Float3:
+        case ResultType::Float2:
+        case ResultType::Int2:
+          break;
+      }
+    }
+    else if (interpolation == Interpolation::Bilinear) {
+      switch (type) {
+        case ResultType::Float:
+          return "compositor_scale_bilinear_float";
+        case ResultType::Float4:
+          return "compositor_scale_bilinear_float4";
+        case ResultType::Int:
+        case ResultType::Color:
+        case ResultType::Float3:
+        case ResultType::Float2:
+        case ResultType::Int2:
+          break;
+      }
+    }
+    else if (interpolation == Interpolation::Bicubic) {
+      switch (type) {
+        case ResultType::Float:
+          return "compositor_scale_bicubic_float";
+        case ResultType::Float4:
+          return "compositor_scale_bicubic_float4";
+        case ResultType::Int:
+        case ResultType::Color:
+        case ResultType::Float3:
+        case ResultType::Float2:
+        case ResultType::Int2:
+          break;
+      }
+    }
+    return "compositor_scale_variable";
+  }
+
+  Interpolation get_interpolation() const
+  {
+    switch (node_storage(bnode()).interpolation) {
+      case CMP_NODE_INTERPOLATION_NEAREST:
+        return Interpolation::Nearest;
+      case CMP_NODE_INTERPOLATION_BILINEAR:
+        return Interpolation::Bilinear;
+      case CMP_NODE_INTERPOLATION_BICUBIC:
+        return Interpolation::Bicubic;
+    }
+
+    BLI_assert_unreachable();
+    return Interpolation::Nearest;
+  }
+
+  bool get_repeat_x()
+  {
+    return ELEM(node_storage(bnode()).wrap_axis,
+                CMP_NODE_TRANSLATE_REPEAT_AXIS_X,
+                CMP_NODE_TRANSLATE_REPEAT_AXIS_XY);
+  }
+
+  bool get_repeat_y()
+  {
+    return ELEM(node_storage(bnode()).wrap_axis,
+                CMP_NODE_TRANSLATE_REPEAT_AXIS_Y,
+                CMP_NODE_TRANSLATE_REPEAT_AXIS_XY);
   }
 
   float2 get_scale()
@@ -292,12 +398,12 @@ class ScaleOperation : public NodeOperation {
 
   CMPNodeScaleMethod get_scale_method()
   {
-    return (CMPNodeScaleMethod)bnode().custom1;
+    return static_cast<CMPNodeScaleMethod>(bnode().custom1);
   }
 
   CMPNodeScaleRenderSizeMethod get_scale_render_size_method()
   {
-    return (CMPNodeScaleRenderSizeMethod)bnode().custom2;
+    return static_cast<CMPNodeScaleRenderSizeMethod>(bnode().custom2);
   }
 
   float2 get_offset()
@@ -326,7 +432,10 @@ void register_node_type_cmp_scale()
   ntype.nclass = NODE_CLASS_DISTORT;
   ntype.declare = file_ns::cmp_node_scale_declare;
   ntype.draw_buttons = file_ns::node_composit_buts_scale;
+  ntype.initfunc = file_ns::node_composit_init_scale;
   ntype.updatefunc = file_ns::node_composite_update_scale;
+  blender::bke::node_type_storage(
+      ntype, "NodeScaleData", node_free_standard_storage, node_copy_standard_storage);
   ntype.get_compositor_operation = file_ns::get_compositor_operation;
 
   blender::bke::node_register_type(ntype);
