@@ -57,6 +57,7 @@ static void cmp_node_scale_declare(NodeDeclarationBuilder &b)
 static void node_composit_init_scale(bNodeTree * /*ntree*/, bNode *node)
 {
   NodeScaleData *data = MEM_callocN<NodeScaleData>(__func__);
+  data->interpolation = CMP_NODE_INTERPOLATION_BILINEAR;
   node->storage = data;
 }
 
@@ -74,19 +75,19 @@ static void node_composite_update_scale(bNodeTree *ntree, bNode *node)
 
 static void node_composit_buts_scale(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
 {
-  uiItemR(layout, ptr, "custom1", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
-  uiItemR(layout, ptr, "interpolation", UI_ITEM_R_SPLIT_EMPTY_NAME, std::nullopt, ICON_NONE);
+  uiItemR(layout, ptr, "space", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
+  uiItemR(layout, ptr, "interpolation", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
 
-  if (RNA_enum_get(ptr, "custom2") == CMP_NODE_SCALE_RENDER_SIZE) {
+  if (RNA_enum_get(ptr, "space") == CMP_NODE_SCALE_RENDER_SIZE) {
     uiItemR(layout,
             ptr,
-            "custom2",
+            "frame_method",
             UI_ITEM_R_SPLIT_EMPTY_NAME | UI_ITEM_R_EXPAND,
             std::nullopt,
             ICON_NONE);
     uiLayout *row = uiLayoutRow(layout, true);
-    uiItemR(row, ptr, "custom3", UI_ITEM_R_SPLIT_EMPTY_NAME, "X", ICON_NONE);
-    uiItemR(row, ptr, "custom4", UI_ITEM_R_SPLIT_EMPTY_NAME, "Y", ICON_NONE);
+    uiItemR(row, ptr, "offset_x", UI_ITEM_R_SPLIT_EMPTY_NAME, "X", ICON_NONE);
+    uiItemR(row, ptr, "offset_y", UI_ITEM_R_SPLIT_EMPTY_NAME, "Y", ICON_NONE);
   }
 }
 
@@ -116,12 +117,9 @@ class ScaleOperation : public NodeOperation {
 
     const Result &input = this->get_input("Image");
     Result &output = this->get_result("Image");
+    output.get_realization_options().interpolation = this->get_interpolation();
     output.share_data(input);
     output.transform(transformation);
-    output.get_realization_options().interpolation = this->get_interpolation();
-    output.get_realization_options().repeat_x = this->get_repeat_x();
-    output.get_realization_options().repeat_y = this->get_repeat_y();
-
   }
 
   void execute_variable_size()
@@ -136,12 +134,17 @@ class ScaleOperation : public NodeOperation {
 
   void execute_variable_size_gpu()
   {
-    // TODO: implement shader for the variable size case. see: realize_on_domain_operation.cc
-    GPUShader *shader = context().get_shader("compositor_scale_variable");
+    GPUShader *shader = this->context().get_shader(this->get_realization_shader_name());
     GPU_shader_bind(shader);
 
     Result &input = get_input("Image");
-    GPU_texture_filter_mode(input, true);
+    /* The texture sampler should use bilinear interpolation for both the bilinear and bicubic
+     * cases, as the logic used by the bicubic realization shader expects textures to use bilinear
+     * interpolation. */
+    const RealizationOptions realization_options = input.get_realization_options();
+    const bool use_bilinear = ELEM(
+        realization_options.interpolation, Interpolation::Bilinear, Interpolation::Bicubic);
+    GPU_texture_filter_mode(input, use_bilinear);
     GPU_texture_extend_mode(input, GPU_SAMPLER_EXTEND_MODE_CLAMP_TO_BORDER);
     input.bind_as_texture(shader, "input_tx");
 
@@ -153,9 +156,6 @@ class ScaleOperation : public NodeOperation {
 
     Result &output = get_result("Image");
     const Domain domain = compute_domain();
-    output.allocate_texture(domain);
-    output.bind_as_image(shader, "output_img");
-
     compute_dispatch_threads_at_least(shader, domain.size);
 
     input.unbind_as_texture();
@@ -172,15 +172,11 @@ class ScaleOperation : public NodeOperation {
     const Result &y_scale = this->get_input("Y");
 
     Result &output = this->get_result("Image");
-    output.get_realization_options().interpolation = this->get_interpolation();
-    output.get_realization_options().repeat_x = this->get_repeat_x();
-    output.get_realization_options().repeat_y = this->get_repeat_y();
-    const RealizationOptions realization_options = output.get_realization_options();
-
+    const Interpolation interpolation = this->get_interpolation();
     const Domain domain = compute_domain();
+    const int2 size = domain.size;
     output.allocate_texture(domain);
 
-    const int2 size = domain.size;
     parallel_for(size, [&](const int2 texel) {
       float2 coordinates = (float2(texel) + float2(0.5f)) / float2(size);
       float2 center = float2(0.5f);
@@ -189,8 +185,7 @@ class ScaleOperation : public NodeOperation {
                             y_scale.load_pixel<float, true>(texel));
       float2 scaled_coordinates = center +
                                   (coordinates - center) / math::max(scale, float2(0.0001f));
-
-      switch (realization_options.interpolation) {
+      switch (interpolation) {
         case Interpolation::Bicubic:
           output.store_pixel(texel, input.sample_cubic_wrap(scaled_coordinates, false, false));
           break;
@@ -204,52 +199,10 @@ class ScaleOperation : public NodeOperation {
     });
   }
 
-  const char *get_realization_shader_name()
+  const char *get_realization_shader_name() const
   {
-    Interpolation interpolation =
-        this->get_result("Image").get_realization_options().interpolation;
-    ResultType type = this->get_result("Image").type();
-    if (interpolation == Interpolation::Nearest) {
-      switch (type) {
-        case ResultType::Float:
-          return "compositor_scale_nearest_float";
-        case ResultType::Float4:
-          return "compositor_scale_nearest_float4";
-        case ResultType::Int:
-        case ResultType::Color:
-        case ResultType::Float3:
-        case ResultType::Float2:
-        case ResultType::Int2:
-          break;
-      }
-    }
-    else if (interpolation == Interpolation::Bilinear) {
-      switch (type) {
-        case ResultType::Float:
-          return "compositor_scale_bilinear_float";
-        case ResultType::Float4:
-          return "compositor_scale_bilinear_float4";
-        case ResultType::Int:
-        case ResultType::Color:
-        case ResultType::Float3:
-        case ResultType::Float2:
-        case ResultType::Int2:
-          break;
-      }
-    }
-    else if (interpolation == Interpolation::Bicubic) {
-      switch (type) {
-        case ResultType::Float:
-          return "compositor_scale_bicubic_float";
-        case ResultType::Float4:
-          return "compositor_scale_bicubic_float4";
-        case ResultType::Int:
-        case ResultType::Color:
-        case ResultType::Float3:
-        case ResultType::Float2:
-        case ResultType::Int2:
-          break;
-      }
+    if (this->get_interpolation() == Interpolation::Bicubic) {
+      return "compositor_scale_variable_bicubic";
     }
     return "compositor_scale_variable";
   }
@@ -267,20 +220,6 @@ class ScaleOperation : public NodeOperation {
 
     BLI_assert_unreachable();
     return Interpolation::Nearest;
-  }
-
-  bool get_repeat_x()
-  {
-    return ELEM(node_storage(bnode()).wrap_axis,
-                CMP_NODE_TRANSLATE_REPEAT_AXIS_X,
-                CMP_NODE_TRANSLATE_REPEAT_AXIS_XY);
-  }
-
-  bool get_repeat_y()
-  {
-    return ELEM(node_storage(bnode()).wrap_axis,
-                CMP_NODE_TRANSLATE_REPEAT_AXIS_Y,
-                CMP_NODE_TRANSLATE_REPEAT_AXIS_XY);
   }
 
   float2 get_scale()
