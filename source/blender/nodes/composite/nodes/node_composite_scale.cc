@@ -75,9 +75,9 @@ static void node_composite_update_scale(bNodeTree *ntree, bNode *node)
 static void node_composit_buts_scale(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
 {
   uiItemR(layout, ptr, "custom1", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
-  uiItemR(layout, ptr, "interpolation", UI_ITEM_R_SPLIT_EMPTY_NAME, std::nullopt, ICON_NONE);
+  uiItemR(layout, ptr, "interpolation", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
 
-  if (RNA_enum_get(ptr, "custom2") == CMP_NODE_SCALE_RENDER_SIZE) {
+  if (RNA_enum_get(ptr, "custom1") == CMP_NODE_SCALE_RENDER_SIZE) {
     uiItemR(layout,
             ptr,
             "custom2",
@@ -121,7 +121,6 @@ class ScaleOperation : public NodeOperation {
     output.get_realization_options().interpolation = this->get_interpolation();
     output.get_realization_options().repeat_x = this->get_repeat_x();
     output.get_realization_options().repeat_y = this->get_repeat_y();
-
   }
 
   void execute_variable_size()
@@ -136,12 +135,14 @@ class ScaleOperation : public NodeOperation {
 
   void execute_variable_size_gpu()
   {
-    // TODO: implement shader for the variable size case. see: realize_on_domain_operation.cc
-    GPUShader *shader = context().get_shader("compositor_scale_variable");
+    GPUShader *shader = this->context().get_shader(this->get_realization_shader_name());
     GPU_shader_bind(shader);
 
     Result &input = get_input("Image");
-    GPU_texture_filter_mode(input, true);
+    const RealizationOptions realization_options = input.get_realization_options();
+    const bool use_bilinear = ELEM(
+        realization_options.interpolation, Interpolation::Bilinear, Interpolation::Bicubic);
+    GPU_texture_filter_mode(input, use_bilinear);
     GPU_texture_extend_mode(input, GPU_SAMPLER_EXTEND_MODE_CLAMP_TO_BORDER);
     input.bind_as_texture(shader, "input_tx");
 
@@ -209,12 +210,12 @@ class ScaleOperation : public NodeOperation {
     Interpolation interpolation =
         this->get_result("Image").get_realization_options().interpolation;
     ResultType type = this->get_result("Image").type();
-    if (interpolation == Interpolation::Nearest) {
+    if (interpolation == Interpolation::Bicubic) {
       switch (type) {
         case ResultType::Float:
-          return "compositor_scale_nearest_float";
+          return "compositor_scale_variable_bicubic_float";
         case ResultType::Float4:
-          return "compositor_scale_nearest_float4";
+          return "compositor_scale_variable_bicubic_float4";
         case ResultType::Int:
         case ResultType::Color:
         case ResultType::Float3:
@@ -223,12 +224,12 @@ class ScaleOperation : public NodeOperation {
           break;
       }
     }
-    else if (interpolation == Interpolation::Bilinear) {
+    else {
       switch (type) {
         case ResultType::Float:
-          return "compositor_scale_bilinear_float";
+          return "compositor_scale_variable_float";
         case ResultType::Float4:
-          return "compositor_scale_bilinear_float4";
+          return "compositor_scale_variable_float4";
         case ResultType::Int:
         case ResultType::Color:
         case ResultType::Float3:
@@ -237,22 +238,8 @@ class ScaleOperation : public NodeOperation {
           break;
       }
     }
-    else if (interpolation == Interpolation::Bicubic) {
-      switch (type) {
-        case ResultType::Float:
-          return "compositor_scale_bicubic_float";
-        case ResultType::Float4:
-          return "compositor_scale_bicubic_float4";
-        case ResultType::Int:
-        case ResultType::Color:
-        case ResultType::Float3:
-        case ResultType::Float2:
-        case ResultType::Int2:
-          break;
-      }
-    }
-    return "compositor_scale_variable";
-  }
+    return "compositor_scale_variable_shared";
+  };
 
   Interpolation get_interpolation() const
   {
@@ -341,8 +328,8 @@ class ScaleOperation : public NodeOperation {
     }
   }
 
-  /* Scale such that the new size matches the render size. Since the input is freely scaled, it is
-   * potentially stretched, hence the name. */
+  /* Scale such that the new size matches the render size. Since the input is freely scaled, it
+   * is potentially stretched, hence the name. */
   float2 get_scale_render_size_stretch()
   {
     const float2 input_size = float2(get_input("Image").domain().size);
@@ -350,10 +337,10 @@ class ScaleOperation : public NodeOperation {
     return render_size / input_size;
   }
 
-  /* Scale such that the dimension with the smaller scaling factor matches that of the render size
-   * while maintaining the input's aspect ratio. Since the other dimension is guaranteed not to
-   * exceed the render size region due to its larger scaling factor, the image is said to be fit
-   * inside that region, hence the name. */
+  /* Scale such that the dimension with the smaller scaling factor matches that of the render
+   * size while maintaining the input's aspect ratio. Since the other dimension is guaranteed not
+   * to exceed the render size region due to its larger scaling factor, the image is said to be
+   * fit inside that region, hence the name. */
   float2 get_scale_render_size_fit()
   {
     const float2 input_size = float2(get_input("Image").domain().size);
@@ -363,9 +350,9 @@ class ScaleOperation : public NodeOperation {
   }
 
   /* Scale such that the dimension with the larger scaling factor matches that of the render size
-   * while maintaining the input's aspect ratio. Since the other dimension is guaranteed to exceed
-   * the render size region due to its lower scaling factor, the image will be cropped inside that
-   * region, hence the name. */
+   * while maintaining the input's aspect ratio. Since the other dimension is guaranteed to
+   * exceed the render size region due to its lower scaling factor, the image will be cropped
+   * inside that region, hence the name. */
   float2 get_scale_render_size_crop()
   {
     const float2 input_size = float2(get_input("Image").domain().size);

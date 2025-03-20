@@ -15,5 +15,5 @@ void main()
   vec2 scale = vec2(texture_load(x_scale_tx, texel).x, texture_load(y_scale_tx, texel).x);
   vec2 scaled_coordinates = center + (coordinates - center) / max(scale, 0.0001);
 
-  imageStore(output_img, texel, texture(input_tx, scaled_coordinates));
+  imageStore(output_img, texel, SAMPLER_FUNCTION(input_tx, scaled_coordinates));
 }
