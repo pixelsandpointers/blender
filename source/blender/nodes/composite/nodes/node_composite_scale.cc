@@ -141,9 +141,8 @@ class ScaleOperation : public NodeOperation {
     /* The texture sampler should use bilinear interpolation for both the bilinear and bicubic
      * cases, as the logic used by the bicubic realization shader expects textures to use bilinear
      * interpolation. */
-    const RealizationOptions realization_options = input.get_realization_options();
-    const bool use_bilinear = ELEM(
-        realization_options.interpolation, Interpolation::Bilinear, Interpolation::Bicubic);
+    const Interpolation interpolation = this->get_interpolation();
+    const bool use_bilinear = ELEM(interpolation, Interpolation::Bilinear, Interpolation::Bicubic);
     GPU_texture_filter_mode(input, use_bilinear);
     GPU_texture_extend_mode(input, GPU_SAMPLER_EXTEND_MODE_CLAMP_TO_BORDER);
     input.bind_as_texture(shader, "input_tx");
@@ -156,6 +155,8 @@ class ScaleOperation : public NodeOperation {
 
     Result &output = get_result("Image");
     const Domain domain = compute_domain();
+    output.allocate_texture(domain);
+    output.bind_as_image(shader, "output_img");
     compute_dispatch_threads_at_least(shader, domain.size);
 
     input.unbind_as_texture();
