@@ -75,8 +75,8 @@ static void node_composite_update_scale(bNodeTree *ntree, bNode *node)
 
 static void node_composit_buts_scale(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
 {
-  uiItemR(layout, ptr, "space", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
   uiItemR(layout, ptr, "interpolation", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
+  uiItemR(layout, ptr, "space", UI_ITEM_R_SPLIT_EMPTY_NAME, "", ICON_NONE);
 
   if (RNA_enum_get(ptr, "space") == CMP_NODE_SCALE_RENDER_SIZE) {
     uiItemR(layout,
@@ -117,9 +117,9 @@ class ScaleOperation : public NodeOperation {
 
     const Result &input = this->get_input("Image");
     Result &output = this->get_result("Image");
-    output.get_realization_options().interpolation = this->get_interpolation();
     output.share_data(input);
     output.transform(transformation);
+    output.get_realization_options().interpolation = this->get_interpolation();
   }
 
   void execute_variable_size()
