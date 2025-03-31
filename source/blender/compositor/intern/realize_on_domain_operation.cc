@@ -189,8 +189,10 @@ void RealizeOnDomainOperation::realize_on_domain_cpu(const float3x3 &inverse_tra
     float4 sample;
     switch (realization_options.interpolation) {
       case Interpolation::Nearest:
-        sample = input.sample_nearest_wrap(
-            normalized_coordinates, realization_options.repeat_x, realization_options.repeat_y);
+        /* We need to use extend as a border condition, otherwise an off-by-one will occur. This
+         * is due to `wrap_coord` returning -1 for negative coordinates and writes zeroes in the
+         * output. */
+        sample = input.sample_nearest_extended(normalized_coordinates);
         break;
       case Interpolation::Bilinear:
         sample = input.sample_bilinear_wrap(
