@@ -157,6 +157,7 @@ class ScaleOperation : public NodeOperation {
     const Domain domain = compute_domain();
     output.allocate_texture(domain);
     output.bind_as_image(shader, "output_img");
+
     compute_dispatch_threads_at_least(shader, domain.size);
 
     input.unbind_as_texture();
