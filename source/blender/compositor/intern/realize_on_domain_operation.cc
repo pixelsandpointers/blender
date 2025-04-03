@@ -189,10 +189,8 @@ void RealizeOnDomainOperation::realize_on_domain_cpu(const float3x3 &inverse_tra
     float4 sample;
     switch (realization_options.interpolation) {
       case Interpolation::Nearest:
-        /* We need to use extend as a border condition, otherwise an off-by-one will occur. This
-         * is due to `wrap_coord` returning -1 for negative coordinates and writes zeroes in the
-         * output. */
-        sample = input.sample_nearest_extended(normalized_coordinates);
+        sample = input.sample_nearest_wrap(
+            normalized_coordinates, realization_options.repeat_x, realization_options.repeat_y);
         break;
       case Interpolation::Bilinear:
         sample = input.sample_bilinear_wrap(
@@ -267,8 +265,15 @@ static Domain compute_realized_transformation_domain(Context &context, const Dom
 
   /* Round the bounds such that they cover the entire transformed domain, which means flooring for
    * the lower bound and ceiling for the upper bound. */
-  const int2 integer_lower_bound = int2(math::floor(lower_bound));
-  const int2 integer_upper_bound = int2(math::ceil(upper_bound));
+  float frac_lower = lower_bound[0];
+  float frac_upper = upper_bound[0];
+
+  const bool should_ceil_lower = (abs(frac_lower - int(frac_lower)) * 10 > 5.f);
+  const bool should_ceil_upper = (abs(frac_upper - int(frac_upper)) * 10 > 5.f);
+  const int2 integer_lower_bound = should_ceil_lower ? int2(math::ceil(lower_bound)) :
+                                                       int2(math::floor(lower_bound));
+  const int2 integer_upper_bound = should_ceil_upper ? int2(math::ceil(upper_bound)) :
+                                                       int2(math::floor(upper_bound));
 
   const int2 new_size = integer_upper_bound - integer_lower_bound;
 
