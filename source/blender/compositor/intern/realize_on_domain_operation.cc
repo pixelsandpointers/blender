@@ -263,17 +263,10 @@ static Domain compute_realized_transformation_domain(Context &context, const Dom
       math::max(transformed_lower_left_corner, transformed_lower_right_corner),
       math::max(transformed_upper_left_corner, transformed_upper_right_corner));
 
-  /* Round the bounds such that they cover the entire transformed domain, which means flooring for
-   * the lower bound and ceiling for the upper bound. */
-  float frac_lower = lower_bound[0];
-  float frac_upper = upper_bound[0];
-
-  const bool should_ceil_lower = (abs(frac_lower - int(frac_lower)) * 10 > 5.f);
-  const bool should_ceil_upper = (abs(frac_upper - int(frac_upper)) * 10 > 5.f);
-  const int2 integer_lower_bound = should_ceil_lower ? int2(math::ceil(lower_bound)) :
-                                                       int2(math::floor(lower_bound));
-  const int2 integer_upper_bound = should_ceil_upper ? int2(math::ceil(upper_bound)) :
-                                                       int2(math::floor(upper_bound));
+  /* Round the bounds such that they cover the entire transformed domain, which means ceiling for
+   * the lower bound and flooring for the upper bound. */
+  const int2 integer_lower_bound = int2(math::ceil(lower_bound));
+  const int2 integer_upper_bound = int2(math::floor(upper_bound));
 
   const int2 new_size = integer_upper_bound - integer_lower_bound;
 
